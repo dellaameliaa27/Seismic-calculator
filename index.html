@@ -1,293 +1,956 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Seismic Calculator</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <style>
-
-body{
-    font-family:Arial,sans-serif;
-    max-width:900px;
-    margin:auto;
-    padding:20px;
+:root{
+    color-scheme:light;
+    --blue-950:#082f49;
+    --blue-900:#0c4a6e;
+    --blue-700:#0369a1;
+    --blue-600:#0284c7;
+    --blue-100:#e0f2fe;
+    --blue-50:#f0f9ff;
+    --ink:#0f172a;
+    --muted:#64748b;
+    --line:#cbd5e1;
+    --surface:#ffffff;
+    --success:#047857;
+    --warning:#b45309;
+    --danger:#b91c1c;
+    --shadow:0 18px 45px rgba(8,47,73,.14);
 }
 
-h1{
-    text-align:center;
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    font-family:Arial,Helvetica,sans-serif;
+    color:var(--ink);
+    background:
+        radial-gradient(circle at top left, rgba(14,165,233,.22), transparent 34rem),
+        linear-gradient(180deg,#f8fbff 0%,#eef7ff 52%,#f8fbff 100%);
+}
+
+.shell{
+    width:min(1120px,100%);
+    margin:0 auto;
+    padding:28px 18px 42px;
+}
+
+.hero{
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:20px;
+    align-items:end;
+    padding:28px;
+    color:#fff;
+    background:linear-gradient(135deg,var(--blue-950),var(--blue-700));
+    border-radius:18px;
+    box-shadow:var(--shadow);
+}
+
+.hero h1{
+    margin:0 0 8px;
+    font-size:clamp(2rem,4vw,3.3rem);
+    line-height:1;
+    letter-spacing:0;
+}
+
+.hero p{
+    margin:0;
+    max-width:720px;
+    color:#dbeafe;
+    font-size:1rem;
+}
+
+.hero-stat{
+    min-width:178px;
+    padding:16px;
+    border:1px solid rgba(255,255,255,.25);
+    border-radius:14px;
+    background:rgba(255,255,255,.1);
+}
+
+.hero-stat span{
+    display:block;
+    color:#bae6fd;
+    font-size:.78rem;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+}
+
+.hero-stat strong{
+    display:block;
+    margin-top:6px;
+    font-size:1.6rem;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(320px,.72fr);
+    gap:18px;
+    margin-top:18px;
 }
 
 .card{
-    border:1px solid #ddd;
-    border-radius:8px;
-    padding:15px;
-    margin-bottom:15px;
+    background:rgba(255,255,255,.92);
+    border:1px solid rgba(148,163,184,.45);
+    border-radius:14px;
+    padding:20px;
+    box-shadow:0 12px 30px rgba(15,23,42,.06);
+}
+
+.card h2{
+    margin:0 0 14px;
+    font-size:1.05rem;
+}
+
+.upload-panel{
+    display:grid;
+    gap:14px;
+}
+
+.file-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+}
+
+input[type="file"]{
+    width:min(100%,420px);
+    padding:10px;
+    border:1px dashed var(--blue-600);
+    border-radius:10px;
+    background:var(--blue-50);
+}
+
+.button-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+button{
+    min-height:42px;
+    padding:10px 16px;
+    border:0;
+    border-radius:10px;
+    color:#fff;
+    background:var(--blue-700);
+    font-weight:700;
+    cursor:pointer;
+    transition:transform .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+button:hover:not(:disabled){
+    transform:translateY(-1px);
+    background:var(--blue-600);
+    box-shadow:0 8px 18px rgba(2,132,199,.22);
+}
+
+button.secondary{
+    color:var(--blue-900);
+    background:var(--blue-100);
+}
+
+button.ghost{
+    color:var(--blue-900);
+    background:#fff;
+    border:1px solid var(--line);
+}
+
+button:disabled{
+    cursor:not-allowed;
+    opacity:.48;
+}
+
+.status{
+    min-height:42px;
+    padding:12px 14px;
+    border-radius:10px;
+    color:var(--blue-900);
+    background:var(--blue-50);
+    border:1px solid #bae6fd;
+    font-weight:700;
+}
+
+.status.success{
+    color:var(--success);
+    background:#ecfdf5;
+    border-color:#a7f3d0;
+}
+
+.status.warning{
+    color:var(--warning);
+    background:#fffbeb;
+    border-color:#fde68a;
+}
+
+.status.danger{
+    color:var(--danger);
+    background:#fef2f2;
+    border-color:#fecaca;
+}
+
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:12px;
+}
+
+label{
+    display:grid;
+    gap:6px;
+    color:var(--muted);
+    font-size:.82rem;
+    font-weight:700;
+}
+
+select,
+input[type="number"]{
+    width:100%;
+    min-height:42px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:9px 10px;
+    color:var(--ink);
+    background:#fff;
+    font-size:1rem;
+}
+
+select:focus,
+input[type="number"]:focus{
+    outline:3px solid rgba(14,165,233,.22);
+    border-color:var(--blue-600);
+}
+
+.table-wrap{
+    overflow:auto;
 }
 
 table{
     width:100%;
-    border-collapse:collapse;
+    border-collapse:separate;
+    border-spacing:0;
 }
 
-th,td{
-    border:1px solid #ddd;
-    padding:8px;
+th,
+td{
+    padding:11px 12px;
+    border-bottom:1px solid #e2e8f0;
+    text-align:left;
 }
 
-button{
-    padding:10px 20px;
-    cursor:pointer;
+th{
+    color:var(--muted);
+    font-size:.78rem;
+    text-transform:uppercase;
+    letter-spacing:.08em;
 }
 
-.result{
-    font-weight:bold;
+td:last-child{
+    font-weight:800;
+    color:var(--blue-900);
 }
 
+tr:last-child td{
+    border-bottom:0;
+}
+
+.summary{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px;
+}
+
+.metric{
+    min-height:92px;
+    padding:14px;
+    border-radius:12px;
+    background:linear-gradient(180deg,#fff,var(--blue-50));
+    border:1px solid #dbeafe;
+}
+
+.metric span{
+    display:block;
+    color:var(--muted);
+    font-size:.76rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+}
+
+.metric strong{
+    display:block;
+    margin-top:10px;
+    color:var(--blue-950);
+    font-size:1.7rem;
+}
+
+.muted{
+    color:var(--muted);
+    font-size:.9rem;
+}
+
+.spectrum-tools{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin:8px 0 14px;
+}
+
+.site-button{
+    min-width:48px;
+    min-height:36px;
+    padding:8px 12px;
+    color:var(--blue-900);
+    background:#fff;
+    border:1px solid #bae6fd;
+}
+
+.site-button.active{
+    color:#fff;
+    background:var(--blue-700);
+}
+
+.chart-panel{
+    padding:10px;
+    border:1px solid #dbeafe;
+    border-radius:12px;
+    background:#fff;
+}
+
+#spectrumCanvas{
+    display:block;
+    width:100%;
+    height:auto;
+    aspect-ratio:16/9;
+}
+
+.formula-note{
+    margin:10px 0 0;
+    color:var(--muted);
+    font-size:.82rem;
+}
+
+@media (max-width:800px){
+    .hero,
+    .grid{
+        grid-template-columns:1fr;
+    }
+
+    .form-grid,
+    .summary{
+        grid-template-columns:1fr;
+    }
+}
 </style>
-
 </head>
 
 <body>
+<main class="shell">
+    <section class="hero">
+        <div>
+            <h1>Seismic Calculator</h1>
+            <p>Calculated Based on SNI 1726:2019</p>
+        </div>
+        <div class="hero-stat">
+            <span>Status</span>
+            <strong id="heroStatus">Ready</strong>
+        </div>
+    </section>
 
-<h1>Seismic Calculator</h1>
+    <section class="grid">
+        <div class="card">
+            <h2>PDF Tools</h2>
+            <div class="upload-panel">
+                <div class="file-row">
+                    <input type="file" id="pdfFile" accept="application/pdf,.pdf">
+                </div>
+                <div class="button-row">
+                    <button type="button" onclick="readPDF()">Process PDF</button>
+                    <button type="button" class="secondary" onclick="calculateFromInputs()">Recalculate</button>
+                    <button type="button" class="ghost" onclick="clearAll()">Clear</button>
+                    <button type="button" id="downloadReport" onclick="downloadPDFReport()" disabled>Download PDF Report</button>
+                </div>
+                <div id="status" class="status">Choose a PDF to begin.</div>
+                <p class="muted">Extracted values stay editable so you can correct PDF text recognition before generating the final report.</p>
+            </div>
+        </div>
 
-<div class="card">
+        <div class="card">
+            <h2>Extracted Parameters</h2>
+            <div class="form-grid">
+                <label>
+                    Site Class
+                    <select id="siteClassInput">
+                        <option value="SA">SA</option>
+                        <option value="SB">SB</option>
+                        <option value="SC">SC</option>
+                        <option value="SD" selected>SD</option>
+                        <option value="SE">SE</option>
+                    </select>
+                </label>
+                <label>
+                    SS
+                    <input id="ssInput" type="number" step="0.0001" min="0" placeholder="0.0000">
+                </label>
+                <label>
+                    S1
+                    <input id="s1Input" type="number" step="0.0001" min="0" placeholder="0.0000">
+                </label>
+            </div>
+        </div>
+    </section>
 
-<h3>Upload PDF</h3>
+    <section class="grid">
+        <div class="card">
+            <h2>Calculated Seismic Parameters</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Fa</td><td id="fa">--</td></tr>
+                        <tr><td>Fv</td><td id="fv">--</td></tr>
+                        <tr><td>SMS</td><td id="sms">--</td></tr>
+                        <tr><td>SM1</td><td id="sm1">--</td></tr>
+                        <tr><td>SDS</td><td id="sds">--</td></tr>
+                        <tr><td>SD1</td><td id="sd1">--</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-<input type="file" id="pdfFile" accept=".pdf">
+        <div class="card">
+            <h2>Report Preview</h2>
+            <div class="summary">
+                <div class="metric">
+                    <span>SDS</span>
+                    <strong id="sdsPreview">--</strong>
+                </div>
+                <div class="metric">
+                    <span>SD1</span>
+                    <strong id="sd1Preview">--</strong>
+                </div>
+            </div>
+            <p class="muted" id="reportNote">Run a calculation to enable report download.</p>
+        </div>
+    </section>
 
-<button onclick="readPDF()">Process PDF</button>
-
-</div>
-
-<div class="card">
-
-<h3>Extracted Parameters</h3>
-
-<table>
-
-<tr>
-<td>Site Class</td>
-<td id="siteClass"></td>
-</tr>
-
-<tr>
-<td>SS</td>
-<td id="ss"></td>
-</tr>
-
-<tr>
-<td>S1</td>
-<td id="s1"></td>
-</tr>
-
-</table>
-
-</div>
-
-<div class="card">
-
-<h3>Calculated Seismic Parameters</h3>
-
-<table>
-
-<tr>
-<td>Fa</td>
-<td id="fa"></td>
-</tr>
-
-<tr>
-<td>Fv</td>
-<td id="fv"></td>
-</tr>
-
-<tr>
-<td>SMS</td>
-<td id="sms"></td>
-</tr>
-
-<tr>
-<td>SM1</td>
-<td id="sm1"></td>
-</tr>
-
-<tr>
-<td>SDS</td>
-<td id="sds"></td>
-</tr>
-
-<tr>
-<td>SD1</td>
-<td id="sd1"></td>
-</tr>
-
-</table>
-
-</div>
+    <section class="card">
+        <h2>Spektrum Respon Desain</h2>
+        <div class="spectrum-tools" aria-label="Site class graph controls">
+            <button type="button" class="site-button" data-site="SA" onclick="setGraphSiteClass('SA')">SA</button>
+            <button type="button" class="site-button" data-site="SB" onclick="setGraphSiteClass('SB')">SB</button>
+            <button type="button" class="site-button" data-site="SC" onclick="setGraphSiteClass('SC')">SC</button>
+            <button type="button" class="site-button active" data-site="SD" onclick="setGraphSiteClass('SD')">SD</button>
+            <button type="button" class="site-button" data-site="SE" onclick="setGraphSiteClass('SE')">SE</button>
+        </div>
+        <div class="chart-panel">
+            <canvas id="spectrumCanvas" width="1000" height="560"></canvas>
+        </div>
+        <p class="formula-note" id="spectrumNote">Enter SS and S1, then calculate to draw the response spectrum.</p>
+    </section>
+</main>
 
 <script>
+if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
 
 const faTable = {
-
-SA:[0.8,0.8,0.8,0.8,0.8,0.8],
-SB:[0.9,0.9,0.9,0.9,0.9,0.9],
-SC:[1.3,1.3,1.2,1.2,1.2,1.2],
-SD:[1.6,1.4,1.2,1.1,1.0,1.0],
-SE:[2.4,1.7,1.3,1.1,0.9,0.8]
-
+    SA:[0.8,0.8,0.8,0.8,0.8,0.8],
+    SB:[0.9,0.9,0.9,0.9,0.9,0.9],
+    SC:[1.3,1.3,1.2,1.2,1.2,1.2],
+    SD:[1.6,1.4,1.2,1.1,1.0,1.0],
+    SE:[2.4,1.7,1.3,1.1,0.9,0.8]
 };
 
 const ssPoints=[0.25,0.50,0.75,1.00,1.25,1.50];
 
 const fvTable = {
-
-SA:[0.8,0.8,0.8,0.8,0.8,0.8],
-SB:[0.8,0.8,0.8,0.8,0.8,0.8],
-SC:[1.5,1.5,1.5,1.5,1.5,1.4],
-SD:[2.4,2.2,2.0,1.9,1.8,1.7],
-SE:[4.2,3.3,2.8,2.4,2.2,2.0]
-
+    SA:[0.8,0.8,0.8,0.8,0.8,0.8],
+    SB:[0.8,0.8,0.8,0.8,0.8,0.8],
+    SC:[1.5,1.5,1.5,1.5,1.5,1.4],
+    SD:[2.4,2.2,2.0,1.9,1.8,1.7],
+    SE:[4.2,3.3,2.8,2.4,2.2,2.0]
 };
 
 const s1Points=[0.10,0.20,0.30,0.40,0.50,0.60];
+let latestResult=null;
+let graphSiteClass="SD";
 
 function interpolate(x,x1,y1,x2,y2){
-
-return y1 + (x-x1)*(y2-y1)/(x2-x1);
-
+    return y1 + (x-x1)*(y2-y1)/(x2-x1);
 }
 
-function lookupFa(siteClass,ss){
+function lookupValue(table,points,siteClass,value){
+    const values = table[siteClass];
 
-const values = faTable[siteClass];
+    if(!values) return null;
+    if(value<=points[0]) return values[0];
+    if(value>=points[points.length-1]) return values[values.length-1];
 
-if(ss<=ssPoints[0]) return values[0];
-if(ss>=ssPoints[5]) return values[5];
+    for(let i=0;i<points.length-1;i++){
+        if(value>=points[i] && value<=points[i+1]){
+            return interpolate(value,points[i],values[i],points[i+1],values[i+1]);
+        }
+    }
 
-for(let i=0;i<ssPoints.length-1;i++){
-
-if(ss>=ssPoints[i] && ss<=ssPoints[i+1]){
-
-return interpolate(
-ss,
-ssPoints[i],
-values[i],
-ssPoints[i+1],
-values[i+1]
-);
-
+    return null;
 }
 
-}
-
-}
-
-function lookupFv(siteClass,s1){
-
-const values = fvTable[siteClass];
-
-if(s1<=s1Points[0]) return values[0];
-if(s1>=s1Points[5]) return values[5];
-
-for(let i=0;i<s1Points.length-1;i++){
-
-if(s1>=s1Points[i] && s1<=s1Points[i+1]){
-
-return interpolate(
-s1,
-s1Points[i],
-values[i],
-s1Points[i+1],
-values[i+1]
-);
-
-}
-
-}
-
+function setStatus(message,type){
+    const status=document.getElementById("status");
+    status.textContent=message;
+    status.className="status" + (type ? " " + type : "");
+    document.getElementById("heroStatus").textContent=type === "success" ? "Complete" : type === "danger" ? "Check" : "Ready";
 }
 
 async function readPDF(){
+    const file=document.getElementById("pdfFile").files[0];
 
-const file=document.getElementById("pdfFile").files[0];
+    if(!file){
+        setStatus("Please select a PDF first.","warning");
+        return;
+    }
 
-if(!file){
+    if(!window.pdfjsLib){
+        setStatus("PDF tools did not load. Check your internet connection and refresh.","danger");
+        return;
+    }
 
-alert("Please select PDF");
-return;
+    setStatus("Reading PDF and extracting values...");
 
+    try{
+        const buffer=await file.arrayBuffer();
+        const pdf=await pdfjsLib.getDocument({data:buffer}).promise;
+        let text="";
+
+        for(let i=1;i<=pdf.numPages;i++){
+            const page=await pdf.getPage(i);
+            const content=await page.getTextContent();
+            text += " " + content.items.map(item=>item.str).join(" ");
+        }
+
+        extractValues(text);
+    }catch(error){
+        console.error(error);
+        setStatus("Could not process this PDF. Try another file or enter the values manually.","danger");
+    }
 }
 
-const buffer=await file.arrayBuffer();
-
-const pdf=await pdfjsLib.getDocument(buffer).promise;
-
-let text="";
-
-for(let i=1;i<=pdf.numPages;i++){
-
-const page=await pdf.getPage(i);
-
-const content=await page.getTextContent();
-
-text += content.items.map(x=>x.str).join(" ");
-
+function normalizeText(text){
+    return text.replace(/\s+/g," ").trim();
 }
 
-extractValues(text);
+function findNumber(text,kind){
+    const labels = kind === "ss"
+        ? ["S\\s*S","SS","S_s"]
+        : ["S\\s*1","S1","S_1"];
+    const labelGroup = "(?:" + labels.join("|") + ")";
+    const patterns = [
+        new RegExp("\\b" + labelGroup + "\\b\\s*(?:MCE\\s*R|MCER|MCEr)?\\s*(?:=|:|-)?\\s*([0-9]+(?:\\.[0-9]+)?)","i"),
+        new RegExp("\\b" + labelGroup + "\\b[^0-9]{0,28}([0-9]+(?:\\.[0-9]+)?)","i")
+    ];
 
+    for(const pattern of patterns){
+        const match=text.match(pattern);
+        if(match) return parseFloat(match[1]);
+    }
+
+    return null;
 }
 
-function extractValues(text){
+function findSiteClass(text){
+    const direct=text.match(/\bsite\s*class\b\s*(?:=|:|-)?\s*(S[ABCDE])\b/i);
+    if(direct) return direct[1].toUpperCase();
 
-const ssMatch=text.match(/SS\s*MCE[rR]\s*([0-9.]+)/i);
-const s1Match=text.match(/S1\s*MCE[rR]\s*([0-9.]+)/i);
+    const labeled=text.match(/\bclass\b\s*(?:=|:|-)?\s*(S[ABCDE])\b/i);
+    if(labeled) return labeled[1].toUpperCase();
 
-let siteClass="SE";
-
-if(text.includes("SA")) siteClass="SA";
-if(text.includes("SB")) siteClass="SB";
-if(text.includes("SC")) siteClass="SC";
-if(text.includes("SD")) siteClass="SD";
-if(text.includes("SE")) siteClass="SE";
-
-const ss=ssMatch ? parseFloat(ssMatch[1]) : 0;
-const s1=s1Match ? parseFloat(s1Match[1]) : 0;
-
-document.getElementById("siteClass").innerHTML=siteClass;
-document.getElementById("ss").innerHTML=ss.toFixed(4);
-document.getElementById("s1").innerHTML=s1.toFixed(4);
-
-calculate(siteClass,ss,s1);
-
+    return null;
 }
 
-function calculate(siteClass,ss,s1){
+function extractValues(rawText){
+    const text=normalizeText(rawText);
+    const siteClass=findSiteClass(text);
+    const ss=findNumber(text,"ss");
+    const s1=findNumber(text,"s1");
+    const missing=[];
 
-const Fa=lookupFa(siteClass,ss);
-const Fv=lookupFv(siteClass,s1);
+    if(siteClass) {
+        graphSiteClass=siteClass;
+        document.getElementById("siteClassInput").value=siteClass;
+        updateSiteButtons(siteClass);
+    }
+    else missing.push("Site Class");
 
-const SMS=Fa*ss;
-const SM1=Fv*s1;
+    if(ss !== null) document.getElementById("ssInput").value=ss.toFixed(4);
+    else missing.push("SS");
 
-const SDS=(2/3)*SMS;
-const SD1=(2/3)*SM1;
+    if(s1 !== null) document.getElementById("s1Input").value=s1.toFixed(4);
+    else missing.push("S1");
 
-document.getElementById("fa").innerHTML=Fa.toFixed(3);
-document.getElementById("fv").innerHTML=Fv.toFixed(3);
+    if(missing.length){
+        latestResult=null;
+        clearResults();
+        setStatus("Could not extract " + missing.join(", ") + ". Enter the missing values and click Recalculate.","warning");
+        return;
+    }
 
-document.getElementById("sms").innerHTML=SMS.toFixed(3);
-document.getElementById("sm1").innerHTML=SM1.toFixed(3);
-
-document.getElementById("sds").innerHTML=SDS.toFixed(3);
-document.getElementById("sd1").innerHTML=SD1.toFixed(3);
-
+    setStatus("Values extracted. Calculation complete.","success");
+    calculateFromInputs();
 }
 
+function calculateFromInputs(){
+    const siteClass=graphSiteClass || document.getElementById("siteClassInput").value;
+    const ss=parseFloat(document.getElementById("ssInput").value);
+    const s1=parseFloat(document.getElementById("s1Input").value);
+
+    if(!siteClass || Number.isNaN(ss) || Number.isNaN(s1)){
+        latestResult=null;
+        clearResults();
+        setStatus("Enter Site Class, SS, and S1 before calculating.","warning");
+        return;
+    }
+
+    if(ss < 0 || s1 < 0){
+        latestResult=null;
+        clearResults();
+        setStatus("SS and S1 must be zero or greater.","warning");
+        return;
+    }
+
+    const Fa=lookupValue(faTable,ssPoints,siteClass,ss);
+    const Fv=lookupValue(fvTable,s1Points,siteClass,s1);
+
+    if(Fa === null || Fv === null){
+        latestResult=null;
+        clearResults();
+        setStatus("Site Class is not recognized.","danger");
+        return;
+    }
+
+    const SMS=Fa*ss;
+    const SM1=Fv*s1;
+    const SDS=(2/3)*SMS;
+    const SD1=(2/3)*SM1;
+
+    latestResult={siteClass,ss,s1,Fa,Fv,SMS,SM1,SDS,SD1,date:new Date()};
+    document.getElementById("siteClassInput").value=siteClass;
+    renderResults(latestResult);
+    setStatus("Calculation complete. PDF report is ready to download.","success");
+}
+
+function renderResults(result){
+    document.getElementById("fa").textContent=result.Fa.toFixed(3);
+    document.getElementById("fv").textContent=result.Fv.toFixed(3);
+    document.getElementById("sms").textContent=result.SMS.toFixed(3);
+    document.getElementById("sm1").textContent=result.SM1.toFixed(3);
+    document.getElementById("sds").textContent=result.SDS.toFixed(3);
+    document.getElementById("sd1").textContent=result.SD1.toFixed(3);
+    document.getElementById("sdsPreview").textContent=result.SDS.toFixed(3);
+    document.getElementById("sd1Preview").textContent=result.SD1.toFixed(3);
+    document.getElementById("reportNote").textContent="Report includes extracted inputs, coefficients, and calculated design values.";
+    document.getElementById("downloadReport").disabled=false;
+    updateSiteButtons(result.siteClass);
+    drawSpectrum(result);
+}
+
+function clearResults(){
+    ["fa","fv","sms","sm1","sds","sd1","sdsPreview","sd1Preview"].forEach(id=>{
+        document.getElementById(id).textContent="--";
+    });
+    document.getElementById("reportNote").textContent="Run a calculation to enable report download.";
+    document.getElementById("downloadReport").disabled=true;
+    drawSpectrum(null);
+}
+
+function clearAll(){
+    document.getElementById("pdfFile").value="";
+    document.getElementById("siteClassInput").value="SD";
+    document.getElementById("ssInput").value="";
+    document.getElementById("s1Input").value="";
+    graphSiteClass="SD";
+    latestResult=null;
+    clearResults();
+    updateSiteButtons(graphSiteClass);
+    setStatus("Choose a PDF to begin.");
+}
+
+function setGraphSiteClass(siteClass){
+    graphSiteClass=siteClass;
+    document.getElementById("siteClassInput").value=siteClass;
+    updateSiteButtons(siteClass);
+    calculateFromInputs();
+}
+
+function updateSiteButtons(siteClass){
+    document.querySelectorAll(".site-button").forEach(button=>{
+        button.classList.toggle("active",button.dataset.site === siteClass);
+    });
+}
+
+function spectrumValue(result,t){
+    if(!result) return 0;
+    const T0=0.2*result.SD1/result.SDS;
+    const Ts=result.SD1/result.SDS;
+
+    if(t <= T0) return result.SDS*(0.4 + 0.6*(t/T0));
+    if(t <= Ts) return result.SDS;
+    return result.SD1/t;
+}
+
+function getSpectrumPoints(result){
+    if(!result) return [];
+    const points=[];
+    for(let i=0;i<=180;i++){
+        const t=6*i/180;
+        points.push({t,sa:spectrumValue(result,Math.max(t,0.0001))});
+    }
+    return points;
+}
+
+function drawSpectrum(result){
+    const canvas=document.getElementById("spectrumCanvas");
+    if(!canvas) return;
+
+    const ctx=canvas.getContext("2d");
+    const width=canvas.width;
+    const height=canvas.height;
+    const pad={left:82,right:36,top:70,bottom:70};
+    const chartWidth=width-pad.left-pad.right;
+    const chartHeight=height-pad.top-pad.bottom;
+    const points=getSpectrumPoints(result);
+    const maxSa=result ? Math.max(0.7,result.SDS*1.15, ...points.map(point=>point.sa)) : 0.7;
+    const xScale=t=>pad.left+(t/6)*chartWidth;
+    const yScale=sa=>pad.top+chartHeight-(sa/maxSa)*chartHeight;
+
+    ctx.clearRect(0,0,width,height);
+    ctx.fillStyle="#ffffff";
+    ctx.fillRect(0,0,width,height);
+
+    ctx.fillStyle="#1f2937";
+    ctx.textAlign="center";
+    ctx.font="700 34px Arial";
+    ctx.fillText("Spektrum Respon Desain",width/2,42);
+
+    ctx.strokeStyle="#64748b";
+    ctx.lineWidth=1;
+    ctx.fillStyle="#334155";
+    ctx.font="16px Arial";
+
+    for(let i=0;i<=7;i++){
+        const sa=maxSa*i/7;
+        const y=yScale(sa);
+        ctx.beginPath();
+        ctx.moveTo(pad.left,y);
+        ctx.lineTo(width-pad.right,y);
+        ctx.stroke();
+        ctx.textAlign="right";
+        ctx.fillText(sa.toFixed(1),pad.left-14,y+5);
+    }
+
+    for(let i=0;i<=6;i++){
+        const x=xScale(i);
+        ctx.beginPath();
+        ctx.moveTo(x,pad.top+chartHeight);
+        ctx.lineTo(x,pad.top+chartHeight+8);
+        ctx.stroke();
+        ctx.textAlign="center";
+        ctx.fillText(i + " s",x,pad.top+chartHeight+32);
+    }
+
+    ctx.strokeStyle="#334155";
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(pad.left,pad.top);
+    ctx.lineTo(pad.left,pad.top+chartHeight);
+    ctx.lineTo(width-pad.right,pad.top+chartHeight);
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(30,pad.top+chartHeight/2);
+    ctx.rotate(-Math.PI/2);
+    ctx.textAlign="center";
+    ctx.fillStyle="#1f2937";
+    ctx.font="700 24px Arial";
+    ctx.fillText("SA (g)",0,0);
+    ctx.restore();
+
+    ctx.textAlign="center";
+    ctx.font="700 24px Arial";
+    ctx.fillText("T (detik)",pad.left+chartWidth/2,height-18);
+
+    if(points.length){
+        ctx.strokeStyle="#ef4444";
+        ctx.lineWidth=4;
+        ctx.beginPath();
+        points.forEach((point,index)=>{
+            const x=xScale(point.t);
+            const y=yScale(point.sa);
+            if(index === 0) ctx.moveTo(x,y);
+            else ctx.lineTo(x,y);
+        });
+        ctx.stroke();
+
+        ctx.fillStyle="#0c4a6e";
+        ctx.textAlign="left";
+        ctx.font="700 16px Arial";
+        ctx.fillText("Site Class " + result.siteClass + " | SDS " + result.SDS.toFixed(3) + " | SD1 " + result.SD1.toFixed(3),pad.left,pad.top-20);
+        document.getElementById("spectrumNote").textContent="Graph updates by site class using SDS, SD1, T0 = 0.2 SD1/SDS, and Ts = SD1/SDS.";
+    }else{
+        ctx.fillStyle="#64748b";
+        ctx.textAlign="center";
+        ctx.font="18px Arial";
+        ctx.fillText("No response spectrum yet",pad.left+chartWidth/2,pad.top+chartHeight/2);
+        document.getElementById("spectrumNote").textContent="Enter SS and S1, then calculate to draw the response spectrum.";
+    }
+}
+
+function pdfEscape(value){
+    return String(value).replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)");
+}
+
+function buildSimplePDF(lines,result){
+    const points=getSpectrumPoints(result);
+    const maxSa=result ? Math.max(0.7,result.SDS*1.15, ...points.map(point=>point.sa)) : 0.7;
+    const chart={x:62,y:72,w:488,h:250};
+    const xScale=t=>chart.x+(t/6)*chart.w;
+    const yScale=sa=>chart.y+(sa/maxSa)*chart.h;
+    const contentLines=[
+        "BT",
+        "/F1 20 Tf",
+        "1 0 0 1 50 760 Tm",
+        "(Seismic Calculator Report) Tj",
+        "/F1 10 Tf",
+        "1 0 0 1 50 740 Tm",
+        "(Calculated Based on SNI 1726:2019) Tj",
+        "/F1 11 Tf"
+    ];
+
+    let y=714;
+    lines.forEach(line=>{
+        contentLines.push("1 0 0 1 50 " + y + " Tm");
+        contentLines.push("(" + pdfEscape(line) + ") Tj");
+        y -= 16;
+    });
+
+    contentLines.push("ET");
+    contentLines.push("BT /F1 16 Tf 1 0 0 1 190 372 Tm (Spektrum Respon Desain) Tj ET");
+    contentLines.push("0.78 0.83 0.90 RG 0.5 w");
+
+    for(let i=0;i<=7;i++){
+        const sa=maxSa*i/7;
+        const gy=yScale(sa).toFixed(2);
+        contentLines.push(chart.x + " " + gy + " m " + (chart.x+chart.w) + " " + gy + " l S");
+        contentLines.push("BT /F1 8 Tf 1 0 0 1 " + (chart.x-30) + " " + (Number(gy)-3).toFixed(2) + " Tm (" + pdfEscape(sa.toFixed(1)) + ") Tj ET");
+    }
+
+    for(let i=0;i<=6;i++){
+        const gx=xScale(i).toFixed(2);
+        contentLines.push(gx + " " + chart.y + " m " + gx + " " + (chart.y-5) + " l S");
+        contentLines.push("BT /F1 8 Tf 1 0 0 1 " + (Number(gx)-5).toFixed(2) + " " + (chart.y-22) + " Tm (" + i + " s) Tj ET");
+    }
+
+    contentLines.push("0.20 0.25 0.33 RG 1.2 w");
+    contentLines.push(chart.x + " " + chart.y + " m " + chart.x + " " + (chart.y+chart.h) + " l S");
+    contentLines.push(chart.x + " " + chart.y + " m " + (chart.x+chart.w) + " " + chart.y + " l S");
+    contentLines.push("BT /F1 11 Tf 1 0 0 1 278 24 Tm (T \\(detik\\)) Tj ET");
+    contentLines.push("BT /F1 11 Tf 1 0 0 1 24 204 Tm (SA \\(g\\)) Tj ET");
+
+    if(points.length){
+        contentLines.push("1 0 0 RG 2 w");
+        points.forEach((point,index)=>{
+            const command=index === 0 ? "m" : "l";
+            contentLines.push(xScale(point.t).toFixed(2) + " " + yScale(point.sa).toFixed(2) + " " + command);
+        });
+        contentLines.push("S");
+        contentLines.push("0.05 0.29 0.43 RG");
+        contentLines.push("BT /F1 9 Tf 1 0 0 1 " + chart.x + " 346 Tm (" + pdfEscape("Site Class " + result.siteClass + " | SDS " + result.SDS.toFixed(3) + " | SD1 " + result.SD1.toFixed(3)) + ") Tj ET");
+    }
+
+    const stream=contentLines.join("\n");
+    const objects=[
+        "<< /Type /Catalog /Pages 2 0 R >>",
+        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+        "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        "<< /Length " + stream.length + " >>\nstream\n" + stream + "\nendstream"
+    ];
+
+    let pdf="%PDF-1.4\n";
+    const offsets=[0];
+    objects.forEach((object,index)=>{
+        offsets.push(pdf.length);
+        pdf += (index+1) + " 0 obj\n" + object + "\nendobj\n";
+    });
+
+    const xrefOffset=pdf.length;
+    pdf += "xref\n0 " + (objects.length+1) + "\n";
+    pdf += "0000000000 65535 f \n";
+    for(let i=1;i<offsets.length;i++){
+        pdf += String(offsets[i]).padStart(10,"0") + " 00000 n \n";
+    }
+    pdf += "trailer\n<< /Size " + (objects.length+1) + " /Root 1 0 R >>\n";
+    pdf += "startxref\n" + xrefOffset + "\n%%EOF";
+    return pdf;
+}
+
+function downloadPDFReport(){
+    if(!latestResult){
+        setStatus("Run a calculation before downloading the report.","warning");
+        return;
+    }
+
+    const r=latestResult;
+    const lines=[
+        "Generated: " + r.date.toLocaleString(),
+        "",
+        "Input Parameters",
+        "Site Class: " + r.siteClass,
+        "SS: " + r.ss.toFixed(4),
+        "S1: " + r.s1.toFixed(4),
+        "",
+        "Calculated Parameters",
+        "Fa: " + r.Fa.toFixed(3),
+        "Fv: " + r.Fv.toFixed(3),
+        "SMS: " + r.SMS.toFixed(3),
+        "SM1: " + r.SM1.toFixed(3),
+        "SDS: " + r.SDS.toFixed(3),
+        "SD1: " + r.SD1.toFixed(3)
+    ];
+
+    const blob=new Blob([buildSimplePDF(lines,r)],{type:"application/pdf"});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement("a");
+    link.href=url;
+    link.download="seismic-calculator-report.pdf";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+}
+
+document.getElementById("siteClassInput").addEventListener("change",event=>setGraphSiteClass(event.target.value));
+document.getElementById("ssInput").addEventListener("input",()=>{ if(latestResult) calculateFromInputs(); });
+document.getElementById("s1Input").addEventListener("input",()=>{ if(latestResult) calculateFromInputs(); });
+drawSpectrum(null);
 </script>
-
 </body>
 </html>
