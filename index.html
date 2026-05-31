@@ -71,6 +71,14 @@ body{
     font-size:1rem;
 }
 
+.byline{
+    display:block;
+    margin-top:8px;
+    color:#bae6fd;
+    font-size:.92rem;
+    font-weight:700;
+}
+
 .hero-stat{
     min-width:178px;
     padding:16px;
@@ -308,6 +316,28 @@ tr:last-child td{
     margin:8px 0 14px;
 }
 
+.chart-controls{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(180px,1fr)) auto;
+    gap:12px;
+    align-items:end;
+    margin:0 0 14px;
+}
+
+.chart-controls label{
+    color:var(--blue-900);
+}
+
+.chart-controls input[type="range"]{
+    width:100%;
+    accent-color:var(--blue-700);
+}
+
+.control-value{
+    color:var(--muted);
+    font-size:.82rem;
+}
+
 .site-button{
     min-width:48px;
     min-height:36px;
@@ -327,11 +357,13 @@ tr:last-child td{
     border:1px solid #dbeafe;
     border-radius:12px;
     background:#fff;
+    overflow:auto;
 }
 
 #spectrumCanvas{
     display:block;
     width:100%;
+    min-width:720px;
     height:auto;
     aspect-ratio:16/9;
 }
@@ -349,7 +381,8 @@ tr:last-child td{
     }
 
     .form-grid,
-    .summary{
+    .summary,
+    .chart-controls{
         grid-template-columns:1fr;
     }
 }
@@ -362,6 +395,7 @@ tr:last-child td{
         <div>
             <h1>Seismic Calculator</h1>
             <p>Calculated Based on SNI 1726:2019</p>
+            <span class="byline">Made by: dellaameliaa27</span>
         </div>
         <div class="hero-stat">
             <span>Status</span>
@@ -460,6 +494,19 @@ tr:last-child td{
             <button type="button" class="site-button active" data-site="SD" onclick="setGraphSiteClass('SD')">SD</button>
             <button type="button" class="site-button" data-site="SE" onclick="setGraphSiteClass('SE')">SE</button>
         </div>
+        <div class="chart-controls" aria-label="Graph size controls">
+            <label>
+                Y-Axis Max
+                <input id="axisMaxControl" type="range" min="10" max="100" value="70" step="5" oninput="setGraphLineStyle()">
+                <span class="control-value" id="axisMaxValue">0.70 g</span>
+            </label>
+            <label>
+                Line Thickness
+                <input id="lineWeightControl" type="range" min="2" max="10" value="4" step="1" oninput="setGraphLineStyle()">
+                <span class="control-value" id="lineWeightValue">4 px</span>
+            </label>
+            <button type="button" class="ghost" onclick="resetGraphLineStyle()">Reset Graph</button>
+        </div>
         <div class="chart-panel">
             <canvas id="spectrumCanvas" width="1000" height="560"></canvas>
         </div>
@@ -493,6 +540,8 @@ const fvTable = {
 const s1Points=[0.10,0.20,0.30,0.40,0.50,0.60];
 let latestResult=null;
 let graphSiteClass="SD";
+let manualAxisMax=0.7;
+let spectrumLineWeight=4;
 
 function interpolate(x,x1,y1,x2,y2){
     return y1 + (x-x1)*(y2-y1)/(x2-x1);
@@ -706,6 +755,20 @@ function updateSiteButtons(siteClass){
     });
 }
 
+function setGraphLineStyle(){
+    manualAxisMax=parseFloat(document.getElementById("axisMaxControl").value)/100;
+    spectrumLineWeight=parseInt(document.getElementById("lineWeightControl").value,10);
+    document.getElementById("axisMaxValue").textContent=manualAxisMax.toFixed(2) + " g";
+    document.getElementById("lineWeightValue").textContent=spectrumLineWeight + " px";
+    drawSpectrum(latestResult);
+}
+
+function resetGraphLineStyle(){
+    document.getElementById("axisMaxControl").value=70;
+    document.getElementById("lineWeightControl").value=4;
+    setGraphLineStyle();
+}
+
 function spectrumValue(result,t){
     if(!result) return 0;
     const T0=0.2*result.SD1/result.SDS;
@@ -737,7 +800,8 @@ function drawSpectrum(result){
     const chartWidth=width-pad.left-pad.right;
     const chartHeight=height-pad.top-pad.bottom;
     const points=getSpectrumPoints(result);
-    const maxSa=result ? Math.max(0.7,result.SDS*1.15, ...points.map(point=>point.sa)) : 0.7;
+    const curveMax=points.length ? Math.max(...points.map(point=>point.sa)) : 0.7;
+    const maxSa=result ? Math.max(manualAxisMax,curveMax*1.08) : manualAxisMax;
     const xScale=t=>pad.left+(t/6)*chartWidth;
     const yScale=sa=>pad.top+chartHeight-(sa/maxSa)*chartHeight;
 
@@ -799,7 +863,7 @@ function drawSpectrum(result){
 
     if(points.length){
         ctx.strokeStyle="#ef4444";
-        ctx.lineWidth=4;
+        ctx.lineWidth=spectrumLineWeight;
         ctx.beginPath();
         points.forEach((point,index)=>{
             const x=xScale(point.t);
@@ -829,7 +893,8 @@ function pdfEscape(value){
 
 function buildSimplePDF(lines,result){
     const points=getSpectrumPoints(result);
-    const maxSa=result ? Math.max(0.7,result.SDS*1.15, ...points.map(point=>point.sa)) : 0.7;
+    const curveMax=points.length ? Math.max(...points.map(point=>point.sa)) : 0.7;
+    const maxSa=result ? Math.max(manualAxisMax,curveMax*1.08) : manualAxisMax;
     const chart={x:62,y:72,w:488,h:250};
     const xScale=t=>chart.x+(t/6)*chart.w;
     const yScale=sa=>chart.y+(sa/maxSa)*chart.h;
@@ -841,10 +906,12 @@ function buildSimplePDF(lines,result){
         "/F1 10 Tf",
         "1 0 0 1 50 740 Tm",
         "(Calculated Based on SNI 1726:2019) Tj",
+        "1 0 0 1 50 724 Tm",
+        "(Made by: dellaameliaa27) Tj",
         "/F1 11 Tf"
     ];
 
-    let y=714;
+    let y=696;
     lines.forEach(line=>{
         contentLines.push("1 0 0 1 50 " + y + " Tm");
         contentLines.push("(" + pdfEscape(line) + ") Tj");
@@ -875,7 +942,7 @@ function buildSimplePDF(lines,result){
     contentLines.push("BT /F1 11 Tf 1 0 0 1 24 204 Tm (SA \\(g\\)) Tj ET");
 
     if(points.length){
-        contentLines.push("1 0 0 RG 2 w");
+        contentLines.push("1 0 0 RG " + Math.max(1.2,spectrumLineWeight*.55).toFixed(1) + " w");
         points.forEach((point,index)=>{
             const command=index === 0 ? "m" : "l";
             contentLines.push(xScale(point.t).toFixed(2) + " " + yScale(point.sa).toFixed(2) + " " + command);
@@ -950,6 +1017,7 @@ function downloadPDFReport(){
 document.getElementById("siteClassInput").addEventListener("change",event=>setGraphSiteClass(event.target.value));
 document.getElementById("ssInput").addEventListener("input",()=>{ if(latestResult) calculateFromInputs(); });
 document.getElementById("s1Input").addEventListener("input",()=>{ if(latestResult) calculateFromInputs(); });
+setGraphLineStyle();
 drawSpectrum(null);
 </script>
 </body>
